@@ -340,19 +340,22 @@ for i=1:size(ourdata,1)
 if(i<9)
     color = i;
 else
+    if(~showSpecialLine)
+        continue;
+    end
+        
     color = 9;
 end
 show_data(ourdata{i,1},ourdata{i,3},axes,bifurcation, minParm, maxParm,showUnstablePoints,color,handles.current_network);
+%show_data(ourdata{i,1},ourdata{i,3},axes,bifurcation, minParm, maxParm,showUnstablePoints);
 
 end    %make the same projections that we had before
 
 
 if(handles.current_network ==1)
-    
     %network 1
     legend('---','--+','-+-','-++','+--','+-+','++-','+++')
 else
-    
     %network 84
     legend('---','+++','++-','--+','-+-','+-+','+--','-++')
 end

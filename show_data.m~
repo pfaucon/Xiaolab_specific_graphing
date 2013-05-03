@@ -84,11 +84,7 @@ endInd = 1;
 
 for i = startAt:(size(data,2)/1)-endAt
     
-    if(networkNumber ==1)
-        newColor = ourColor-1;
-    else
-        newColor = bin2Decimal(getColor(data(1:3,(i))));
-    end
+    newColor = bin2Decimal(getColor(data(1:3,(i))));
     %if we are out of the alpha range then flush our points, if we have no
     %points do nothing
     if(data(parameter,(i)) < minAlpha || data(parameter,(i)) > maxAlpha ...
@@ -110,6 +106,7 @@ for i = startAt:(size(data,2)/1)-endAt
             end
             if(endInd - startInd >2)
                 fprintf('parameter leaving alpha range for color %d, start %d, end %d\n',ourColor,startInd,endInd);
+                fprintf('
                 col = clr(ourColor,:);
                 drawPoints(data,axes,startInd,endInd,col,initStability);
             end
