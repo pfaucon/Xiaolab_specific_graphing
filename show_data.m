@@ -5,10 +5,13 @@ networkNumber = network;
 global offset;
 global alphaOffset;
 
+offset=0;
+alphaOffset=0;
+
 if(networkNumber == 1)
-    offset = 1;%.1;
+    offset = 0;%.1;
     data = data + offset;
-    alphaOffset = 1;%10;
+    alphaOffset = 0;%10;
     data(4,:) = data(4,:) + alphaOffset;
 end
 
@@ -23,28 +26,6 @@ clr = colormap(lines(9));
 clr(1,:) = 0; %after 7 we start getting repeat colors but never black
 clr(7,:) = [.5;.5;.5];
 clr(9,:) = [.75;.75;.75];
-
-% clr = [
-%          0         0         0
-%          0    0.5000         0
-%     1.0000         0         0
-%          0    0.7500    0.7500
-%     0.7500         0    0.7500
-%     0.7500    0.7500         0
-%     0.5000    0.5000    0.5000
-%          0         0    1.0000
-%     0.7500    0.7500    0.7500];
-
-% clr = [        
-%          0         0         0
-%        0.1       0.1      0.80
-%          0      0.75      0.75
-%       1.00         0         0
-%       0.50         0         0
-%          0      0.50      0.50
-%        0.1       0.1    0.3500
-%     0.7500    0.7500    0.7500
-%       0.50      0.50      0.50];
 
 clr = [
          0         0         0
@@ -66,17 +47,28 @@ if(ourColor ==3)
 end
 
 if(networkNumber ==1)
+    %for .09 const
+   %startAt = 100;
+   %endAt = 1300;
+   
    startAt = 1;
+   endAt = 1;
    %the ret -+- line seems to have some problems here, it looks like it
    %loops back
-   endAt = 100;
    
    if(initialColor ==1)
-       startAt = 1970;
-       %the ret -+- line seems to have some problems here, it looks like it
-       %loops back
-       endAt = 1000;
+       if(showUnstable)
+           startAt = 1970;
+           %the ret -+- line seems to have some problems here, it looks like it
+           %loops back
+           endAt = 1000;
+       end
    end
+   
+elseif(networkNumber==84)
+    startAt = 100;
+    endAt = 100;
+    
 end
 
 startInd = startAt;
@@ -98,6 +90,10 @@ for i = startAt:(size(data,2)/1)-endAt
             endInd = (i); 
         end
      %   endInd = (i);
+     
+     if(data(parameter,(i)) > maxAlpha && data(parameter,(i)) < maxAlpha+.1 && isAttractor(data(1:3,i),data(4,i),networkNumber))
+        fprintf('parameter leaving alpha range for initial color %d, a:%f, x:%f, y:%f, z:%f\n',initialColor,data(4,(i)),data(1,(i)),data(2,(i)),data(3,(i)));
+     end
         if( initStability || showUnstable)
             %this is a nasty hack around the fact that our colors are bound
             %as binary opposites around 4 then the sum mod 8 = the lower
@@ -242,11 +238,16 @@ set(gca,'fontsize',18)
 %net 1
 if(networkNumber ==1)
     set(gca,'Xscale','log','Yscale','log','Zscale','log')
-    axis([(alphaOffset*.9+offset*.9) 100 offset*.9 100 offset*.9 100])
+    axis([(alphaOffset*.9+offset*.9)+.1 100 offset*.9+.1 100 offset*.9+.1 100])
+
+%    axis([0 5 0 5 0 5]);
+    
+    %for const .09
+    %axis([(alphaOffset*.9+offset*.9) 10 offset*.9 10 offset*.9 10])
 else
     %net 84 A vs X possibility 1
     set(gca,'Xscale','log','Yscale','log','Zscale','log')
-    axis([.6 8 .01 2 .01 2])
+    axis([.6 20 .001 20 .001 20])
     
     %net 84 A vs X possibility 2, looks awkward
     %axis([-.1 2 -.1 2 -.1 2])
@@ -275,13 +276,17 @@ end
 
 %this works only if we are bifurcating on alpha (auto-activation) and it will
 %return whether a point is an attractor for the provided alpha
-function [isStable] = isAttractor(xIn,a,network)
+function [isStable] = isAttractor(xIn,alpha,network)
 global networkNumber;
 global offset;
+global alphaOffset;
 
-a = [a,.1,.1];
-b = [.1,a,.1];
-c = [.1,.1,a];
+
+alpha = alpha-alphaOffset;
+
+a = [alpha,.1,.1];
+b = [.1,alpha,.1];
+c = [.1,.1,alpha];
 
 if(networkNumber == 1)
     x = xIn;
@@ -311,10 +316,12 @@ end
 function [color] = getColor(dataRow,axes)
 global networkNumber;
 global offset;
+global alphaOffset;
 
 if(networkNumber == 1)
-    row = dataRow;
-%    row = row-offset;
+%    row = dataRow;
+    row = row-offset;
+    row(4,:) = row(4,:)-alphaOffset;
 else
     row = dataRow;
 end

@@ -24,6 +24,8 @@ function varargout = HuangVisualizationGUI(varargin)
 
 % Last Modified by GUIDE v2.5 03-May-2013 09:42:52
 
+addpath('./functions')
+
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
@@ -246,10 +248,17 @@ handles.current_data = bout;
 %update our network number, 1 and 2 are net1, 3 is net84
 if(get(handles.networkSelector,'Value') < 3)
     network =1;
+    if(get(handles.networkSelector,'Value') == 1)
+        const = 0;
+    else
+        const = 0.09;
+    end
 else
     network =84;
+    const = 0;
 end
 handles.current_network = network;
+handles.const = const;
 
 guidata(hObject, handles);
 
@@ -278,12 +287,20 @@ if(~isfield(handles, 'current_data'))
     handles.current_data = bout;
     ourdata = bout;
     
-    if(get(handles.networkSelector,'Value') < 2)
+    if(get(handles.networkSelector,'Value') < 3)
         network =1;
+        if(get(handles.networkSelector,'Value') == 1)
+            const = 0;
+        else
+            const = 0.09;
+        end
     else
         network =84;
     end
     handles.current_network = network;
+    handles.const = const;
+    
+    guidata(hObject, handles);
     
 else
     ourdata = handles.current_data;
@@ -361,19 +378,75 @@ else
 end
 
 
+%draw the stable steady states with strengths
+if(handles.current_network ==1)
+    %network 1
+    if(handles.const == 0)
+        load('steady_state_strength_net1.mat');
+    else
+        % const .09
+        load('steady_state_strength_net1_09.mat');
+    end
+    
+else
+   %network 84 
+   load('steady_state_strength_net84.mat');
+end
 
-h1 = gca;
-h2= figure(2);
-clf;
-hax2=copyobj(h1,h2);
-view(0,90) % (b vs x variable)
+figure(1);
+hold on;
 
-h3 = figure(3);
-clf;
-hax3=copyobj(h1,h3);
-view(0,0)
+%alpha 1
+ptset = ss_str{1}';
+ptset2 = ss_str{2}';
 
-h4 = figure(4);
-clf;
-hax4=copyobj(h1,h4);
-view(90,0) % (x vs y)
+offset=0;
+if(handles.current_network==1)
+    offset=0;
+    ptset(1:3,:) = ptset(1:3,:)+offset;
+    ptset2(1:3,:) = ptset2(1:3,:)+offset;
+end
+
+minsize = min(min(ptset(4,:)),min(ptset2(4,:)));
+if (minsize ==0)
+    minsize = .0008;
+end
+
+for j=1:8
+    
+    if(ptset(4,j) >0)
+        msize = ptset(4,j)/minsize;
+        msize = log2(msize*2);
+        plot3(1+offset, ptset(1,j), ptset(2,j), 'k.', 'MarkerSize',msize*5);
+        %plot3(ptset(1,j), ptset(2,j), ptset(3,j), 'k*', 'MarkerSize',10);
+    end
+end
+
+%alpha 5
+for j=1:8
+    
+    if(ptset2(4,j) >0)
+        
+        msize = ptset2(4,j)/minsize;
+        msize = log2(msize*2);
+        plot3(5+offset, ptset2(1,j), ptset2(2,j), 'k.', 'MarkerSize',msize*5);
+        %plot3(ptset(1,j), ptset(2,j), ptset(3,j),'k*', 'MarkerSize',10);
+    end
+end
+
+
+% h1 = gca;
+% h2= figure(2);
+% clf;
+% hax2=copyobj(h1,h2);
+% view(0,90) % (b vs x variable)
+% 
+% h3 = figure(3);
+% clf;
+% hax3=copyobj(h1,h3);
+% view(0,0)
+% 
+% h4 = figure(4);
+% clf;
+% hax4=copyobj(h1,h4);
+% view(90,0) % (x vs y)
