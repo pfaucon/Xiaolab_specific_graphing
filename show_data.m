@@ -368,13 +368,13 @@ end
 view(-95,16)
 
 %nolabels mode
-% xlabel([]);
-% ylabel([]);
-% zlabel([]);
-% 
-% set(gca,'XTickLabel',[])
-% set(gca,'YTickLabel',[])
-% set(gca,'ZTickLabel',[])
+xlabel([]);
+ylabel([]);
+zlabel([]);
+
+set(gca,'XTickLabel',[])
+set(gca,'YTickLabel',[])
+set(gca,'ZTickLabel',[])
 end
 
 %this works only if we are bifurcating on alpha (auto-activation) and it will

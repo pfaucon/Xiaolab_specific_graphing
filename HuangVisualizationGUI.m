@@ -356,25 +356,52 @@ clf(figure(1));
 %add "patches" to give a sense of depth to the graph
 alpha = .25; % please change this as needed .
 % Obtain the limits of the axes
-%xp = get(gca,'Xlim');
-%zp = get(gca,'Zlim');
 xp = log([.5,20]);
 zp = log([.01,20]);
 % Use the axes Y and Z limits to find the co-ordinates for the patch
 x1 = [ xp(1) xp(2) xp(2) xp(1)];
 z1 = [ zp(1) zp(1) zp(2) zp(2)];
 
+y1 = ones(1,numel(x1))* log(.1);
+y2 = ones(1,numel(x1))* log(1);
+y3 = ones(1,numel(x1))* log(5);
 
+%ybars
+% p = patch(x1,y1,z1, 'b');
+% set(p,'facealpha',alpha)
+% set(p,'edgealpha',alpha)
+% p = patch(x1,y2,z1, 'b');
+% set(p,'facealpha',alpha)
+% set(p,'edgealpha',alpha)
+% p = patch(x1,y3,z1, 'b');
+% set(p,'facealpha',alpha)
+% set(p,'edgealpha',alpha)
 
-y1 = ones(1,numel(x1))* log(.1);  % creates a 1x4 vector representing the Z coordinate values 
-p = patch(x1,y1,z1, 'b');
-% Set the Face and edge transparency to 0.2 using the following properties
+%zbars
+% p = patch(x1,z1,y1, 'b');
+% set(p,'facealpha',alpha)
+% set(p,'edgealpha',alpha)
+% p = patch(x1,z1,y2, 'b');
+% set(p,'facealpha',alpha)
+% set(p,'edgealpha',alpha)
+% p = patch(x1,z1,y3, 'b');
+% set(p,'facealpha',alpha)
+% set(p,'edgealpha',alpha)
+
+%xbars
+xp = log([.01,20]);
+zp = log([.01,20]);
+% Use the axes Y and Z limits to find the co-ordinates for the patch
+x1 = [ xp(1) xp(2) xp(2) xp(1)];
+z1 = [ zp(1) zp(1) zp(2) zp(2)];
+
+y1 = ones(1,numel(x1))* log(1);
+y2 = ones(1,numel(x1))* log(5);
+
+p = patch(y1,x1,z1, 'b');
 set(p,'facealpha',alpha)
 set(p,'edgealpha',alpha)
-
-y1 = ones(1,numel(x1))* log(1);  % creates a 1x4 vector representing the Z coordinate values 
-p = patch(x1,y1,z1, 'b');
-% Set the Face and edge transparency to 0.2 using the following properties
+p = patch(y2,x1,z1, 'b');
 set(p,'facealpha',alpha)
 set(p,'edgealpha',alpha)
 
