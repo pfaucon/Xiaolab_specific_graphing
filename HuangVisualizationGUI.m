@@ -29,11 +29,11 @@ addpath('./functions')
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
-                   'gui_Singleton',  gui_Singleton, ...
-                   'gui_OpeningFcn', @HuangVisualizationGUI_OpeningFcn, ...
-                   'gui_OutputFcn',  @HuangVisualizationGUI_OutputFcn, ...
-                   'gui_LayoutFcn',  [] , ...
-                   'gui_Callback',   []);
+    'gui_Singleton',  gui_Singleton, ...
+    'gui_OpeningFcn', @HuangVisualizationGUI_OpeningFcn, ...
+    'gui_OutputFcn',  @HuangVisualizationGUI_OutputFcn, ...
+    'gui_LayoutFcn',  [] , ...
+    'gui_Callback',   []);
 if nargin && ischar(varargin{1})
     gui_State.gui_Callback = str2func(varargin{1});
 end
@@ -65,7 +65,7 @@ guidata(hObject, handles);
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = HuangVisualizationGUI_OutputFcn(hObject, eventdata, handles) 
+function varargout = HuangVisualizationGUI_OutputFcn(hObject, eventdata, handles)
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -279,6 +279,19 @@ end
 
 function update_Graphs(handles)
 
+clr = [
+    0.00	0.00	0.00 %black
+    0.00    0.50	0.00 %magenta
+    0.70    0.40    0.00
+    0.00	0.00    1.00 %blue
+    0.75    0.75	0.00 %yellow
+    0.00    0.75    0.75
+    0.75    0.00    0.75
+    1.00    0.50    0.00 %orange
+    0.25    0.25    0.25
+    1.00    0.00	0.00 %red
+    1.00    1.00    1.00 %white
+    ];
 
 if(~isfield(handles, 'current_data'))
     contents = cellstr(get(handles.networkSelector,'String'));
@@ -290,12 +303,12 @@ if(~isfield(handles, 'current_data'))
     if(get(handles.networkSelector,'Value') < 3)
         network =1;
         if(get(handles.networkSelector,'Value') == 1)
-            const = 0;
+            const=0;
         else
-            const = 0.09;
+            const=0.09;
         end
     else
-        network =84;
+        network=84;
     end
     handles.current_network = network;
     handles.const = const;
@@ -309,26 +322,26 @@ end
 %get which axes to show, we're lazy so parameterize on the first unused
 %value
 axes=[];
-bifurcation = 4;
+bifurcation=4;
 if(get(handles.AlphaCheckbox,'Value') ==1)
     axes=[4 axes];
 else
-    bifurcation = 4;
+    bifurcation=4;
 end
 if(get(handles.ZCheckbox,'Value') ==1)
     axes=[3 axes];
 else
-    bifurcation = 3;
+    bifurcation=3;
 end
 if(get(handles.YCheckbox,'Value') ==1)
     axes=[2 axes];
 else
-    bifurcation = 2;
+    bifurcation=2;
 end
 if(get(handles.XCheckbox,'Value') ==1)
     axes=[1 axes];
 else
-    bifurcation = 1;
+    bifurcation=1;
 end
 
 %if you check all 4 just graph the first 3
@@ -340,59 +353,114 @@ end
 figure(1);
 clf(figure(1));
 
+%add "patches" to give a sense of depth to the graph
+alpha = .25; % please change this as needed .
+% Obtain the limits of the axes
+%xp = get(gca,'Xlim');
+%zp = get(gca,'Zlim');
+xp = log([.5,20]);
+zp = log([.01,20]);
+% Use the axes Y and Z limits to find the co-ordinates for the patch
+x1 = [ xp(1) xp(2) xp(2) xp(1)];
+z1 = [ zp(1) zp(1) zp(2) zp(2)];
+
+
+
+y1 = ones(1,numel(x1))* log(.1);  % creates a 1x4 vector representing the Z coordinate values 
+p = patch(x1,y1,z1, 'b');
+% Set the Face and edge transparency to 0.2 using the following properties
+set(p,'facealpha',alpha)
+set(p,'edgealpha',alpha)
+
+y1 = ones(1,numel(x1))* log(1);  % creates a 1x4 vector representing the Z coordinate values 
+p = patch(x1,y1,z1, 'b');
+% Set the Face and edge transparency to 0.2 using the following properties
+set(p,'facealpha',alpha)
+set(p,'edgealpha',alpha)
+
 %get the parameter range values
 minParm = str2double(get(handles.minAlphaValue,'String'));
 maxParm = str2double(get(handles.maxAlphaValue,'String'));
 showSpecialLine = get(handles.UCheckbox,'Value');
 showUnstablePoints = get(handles.UnstableCheckbox,'Value');
 
-%loop through all the data we have and call show_data on it
-for i=1:size(ourdata,1)
-    
-    %for net 84 we have duplicates for everything
-%    if(i > 4 && i< 9)
-%        continue;
-%    end
-    
-if(i<9)
-    color = i;
-else
-    if(~showSpecialLine)
-        continue;
-    end
-        
-    color = 9;
-end
-show_data(ourdata{i,1},ourdata{i,3},axes,bifurcation, minParm, maxParm,showUnstablePoints,color,handles.current_network);
-%show_data(ourdata{i,1},ourdata{i,3},axes,bifurcation, minParm, maxParm,showUnstablePoints);
-
-end    %make the same projections that we had before
-
-
-if(handles.current_network ==1)
-    %network 1
-    legend('---','--+','-+-','-++','+--','+-+','++-','+++')
-else
-    %network 84
-    legend('---','+++','++-','--+','-+-','+-+','+--','-++')
-end
-
-
-%draw the stable steady states with strengths
+%load the stable steady state strengths, attractor region / spectral radii
 if(handles.current_network ==1)
     %network 1
     if(handles.const == 0)
-        load('steady_state_strength_net1.mat');
+        %fname = 'steady_state_strength_net1.mat';
+        fname = 'steady_state_radii_net1.mat';
+        load(fname);
     else
         % const .09
-        load('steady_state_strength_net1_09.mat');
+        %fname = 'steady_state_strength_net1_09.mat';
+        fname = 'steady_state_radii_net1_09.mat';
+        load(fname);
     end
     
 else
-   %network 84 
-   load('steady_state_strength_net84.mat');
+    %network 84
+    %fname = 'steady_state_strength_net84.mat';
+    fname = 'steady_state_radii_net84.mat';
+    load(fname);
 end
 
+
+fprintf('\n\nshowing data from network %s with parm range %f to %f\n',fname,minParm, maxParm);
+
+%loop through all the data we have and call show_data on it
+for i=1:size(ourdata,1)
+    
+    if(i<9)
+        color = i;
+    else
+        if(~showSpecialLine)
+            continue;
+        end
+        
+        color = 9;
+    end
+    
+    show_data(ourdata{i,1},ourdata{i,3},axes,bifurcation, minParm, maxParm,showUnstablePoints,color,handles.current_network, handles.const,clr);
+    %show_data(ourdata{i,1},ourdata{i,3},axes,bifurcation, minParm, maxParm,showUnstablePoints);
+    
+end
+
+
+show_legend =0; %we pre-generate the legend separately for graph cleanliness
+if(show_legend)
+    format_zyx =0; %do we want our legend in ZYX or XYZ format?
+    % with z y x format legend
+    if(format_zyx)
+        if(handles.current_network ==1)
+            if(handles.const == 0)
+                %network 1
+                legend('ZYX','---','--+','-+-','-++','+--','+-+','++-','+++')
+            else
+                legend('ZYX','---','--+','-+-','+--','+++')
+            end
+        else
+            %network 84
+            legend('ZYX','---','+++','++-','--+','-+-','+-+','+--','-++')
+        end
+    else
+        if(handles.current_network ==1)
+            if(handles.const == 0)
+                %network 1
+                h_legend = legend(' X Y Z ',' - - - ',' + - - ',' - + - ',' + + - ',' - - + ',' + - + ',' - + + ',' + + + ');
+            else
+                h_legend = legend(' X Y Z ',' - - - ',' + - - ',' - + - ',' - - + ',' + + + ');
+            end
+        else
+            %network 84
+            h_legend = legend(' X Y Z ',' - - -',' + + + ',' - + + ',' + - - ',' - + - ',' + - + ',' - - + ',' + + - ');
+        end
+        
+        set(h_legend,'FontName','Courier','FontSize',26, 'FontWeight' , 'bold');
+    end
+end
+
+%draw the relative stable steady state sizes now
 figure(1);
 hold on;
 
@@ -401,52 +469,69 @@ ptset = ss_str{1}';
 ptset2 = ss_str{2}';
 
 offset=0;
-if(handles.current_network==1)
-    offset=0;
-    ptset(1:3,:) = ptset(1:3,:)+offset;
-    ptset2(1:3,:) = ptset2(1:3,:)+offset;
+if(handles.current_network==1 && handles.const==0)
+    offset=.02;
+    ptset(1:3,1) = ptset(1:3,1)+offset;
+    ptset2(1:3,1) = ptset2(1:3,1)+offset;
 end
 
-minsize = min(min(ptset(4,:)),min(ptset2(4,:)));
-if (minsize ==0)
-    minsize = .0008;
-end
+%hack for using patches, log graphing is out
+ptset(1:3,:) = real(log(ptset(1:3,:)));
+ptset2(1:3,:) = real(log(ptset2(1:3,:)));
 
-for j=1:8
-    
-    if(ptset(4,j) >0)
-        msize = ptset(4,j)/minsize;
-        msize = log2(msize*2);
-        plot3(1+offset, ptset(1,j), ptset(2,j), 'k.', 'MarkerSize',msize*5);
-        %plot3(ptset(1,j), ptset(2,j), ptset(3,j), 'k*', 'MarkerSize',10);
+
+%ptset
+%ptset2
+
+%scale the spectral radii for easier drawing
+for i=1:size(ptset(4,:),2)
+    if(handles.current_network ==84)
+        ptset(4,i) = exp(ptset(4,i))*30;
+        ptset2(4,i) = exp(ptset2(4,i))*30;
+    else
+        if(handles.const ==0)          
+            %ptset(4,i)  = exp((ptset(4,i)^10)*2)*10;
+            ptset(4,i) = exp(ptset(4,i)^10)*30;
+            ptset2(4,i) = exp((ptset2(4,i)^10)*2)*10;  
+        else
+            ptset(4,i)  = exp((ptset(4,i)^10)*2)*20;
+            ptset2(4,i)  = exp((ptset2(4,i)^10)*2)*10;
+            ptset2(4,1) = 25; %hack because otherwise the 1,1,1 state is invisible
+        end
     end
 end
 
-%alpha 5
-for j=1:8
+%ptset
+%ptset2
+
+if(true) %we want to always print the states so that they can be seen
+%if(~showUnstablePoints)
+    %alpha_1 = 1+offset;
+    alpha_1 = log(1+offset);
+    for j=1:8
+
+        if(ptset(4,j) >0)
+            msize = ptset(4,j);
+            h_plot = plot3(alpha_1, ptset(1,j), ptset(2,j), '.', 'MarkerSize',msize,'MarkerEdgeColor' , clr(10,:));
+            set(h_plot, 'linewidth',1.5);
+            h_plot = plot3(alpha_1, ptset(1,j), ptset(2,j), 'o', 'MarkerSize',msize/3 +.5,'MarkerEdgeColor' , clr(1,:));
+            set(h_plot, 'linewidth',2.0);
+        end
+    end
     
-    if(ptset2(4,j) >0)
-        
-        msize = ptset2(4,j)/minsize;
-        msize = log2(msize*2);
-        plot3(5+offset, ptset2(1,j), ptset2(2,j), 'k.', 'MarkerSize',msize*5);
-        %plot3(ptset(1,j), ptset(2,j), ptset(3,j),'k*', 'MarkerSize',10);
+
+    %alpha 5
+%     alpha_5 = 5+offset;
+    alpha_5 = log(5+offset);
+    for j=1:8      
+        if(ptset2(4,j) >30)            
+            msize = ptset2(4,j);
+            %h_plot = plot3(5+offset, ptset2(1,j), ptset2(2,j), 'o', 'MarkerSize',msize*2.1, 'MarkerEdgeColor' , clr(9,:));
+            h_plot = plot3(alpha_5, ptset2(1,j), ptset2(2,j), '.', 'MarkerSize',msize, 'MarkerEdgeColor' , clr(9,:));
+            set(h_plot, 'linewidth',1.5);
+            h_plot = plot3(alpha_5, ptset2(1,j), ptset2(2,j), 'o', 'MarkerSize',msize/3 +.5, 'MarkerEdgeColor' , clr(1,:));
+            set(h_plot, 'linewidth',2.0);
+        end
     end
 end
 
-
-% h1 = gca;
-% h2= figure(2);
-% clf;
-% hax2=copyobj(h1,h2);
-% view(0,90) % (b vs x variable)
-% 
-% h3 = figure(3);
-% clf;
-% hax3=copyobj(h1,h3);
-% view(0,0)
-% 
-% h4 = figure(4);
-% clf;
-% hax4=copyobj(h1,h4);
-% view(90,0) % (x vs y)

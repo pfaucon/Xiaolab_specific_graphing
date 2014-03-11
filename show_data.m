@@ -1,18 +1,22 @@
-function show_data(data,~,axes, parameter, minAlpha,maxAlpha, showUnstable,initialColor,network)
+function show_data(data,~, axes, parameter, minAlpha, maxAlpha, showUnstable,initialColor,network, const, clr)
 
 global networkNumber;
 networkNumber = network;
 global offset;
 global alphaOffset;
+global constant;
+constant = const;
+
 
 offset=0;
 alphaOffset=0;
 
-if(networkNumber == 1)
-    offset = 0;%.1;
+if(networkNumber == 1 && initialColor == 1 && const == 0  )
+    offset = .02;%.1;
     data = data + offset;
     alphaOffset = 0;%10;
     data(4,:) = data(4,:) + alphaOffset;
+    %data(1,:) = data(1,:) + .02;
 end
 
 %this needed to be changed because plots with many line segments seem to
@@ -21,60 +25,96 @@ end
 initStability=1;
 ourColor = initialColor;
 
-%get a colormap for 8 lines to be drawn (line segments for us)
-clr = colormap(lines(9));
-clr(1,:) = 0; %after 7 we start getting repeat colors but never black
-clr(7,:) = [.5;.5;.5];
-clr(9,:) = [.75;.75;.75];
-
-clr = [
-         0         0         0
-         0    0.5000         0
-    1.0000         0         0
-         0         0    1.0000
-    0.7500    0.7500         0
-         0    0.7500    0.7500
-    0.7500         0    0.7500
-    0.7500    0.7500    0.7500
-    0.5000    0.5000    0.5000];
-
+%hack to get legend information up, draw a small white line
+if(initialColor == 1)
+    figure(1)
+    pts = [0 0.001 0.002];
+    %handle = line(0, 0, 0, 'color',clr(10,:),'linewidth',.1);
+    handle = patchline(0, 0, 0, 'color',clr(10,:),'linewidth',.1);
+    clear pts;
+    %hasbehavior(handle,'legend',true);
+end
 
 %figure-specific hacks
 startAt = 1;
-endAt = 1;
-if(ourColor ==3)
-    startAt = 1373;
-end
+endEarly = 1;
 
 if(networkNumber ==1)
-    %for .09 const
-   %startAt = 100;
-   %endAt = 1300;
-   
-   startAt = 1;
-   endAt = 1;
-   %the ret -+- line seems to have some problems here, it looks like it
-   %loops back
-   
-   if(initialColor ==1)
-       if(showUnstable)
-           startAt = 1970;
-           %the ret -+- line seems to have some problems here, it looks like it
-           %loops back
-           endAt = 1000;
-       end
-   end
-   
-elseif(networkNumber==84)
-    startAt = 100;
-    endAt = 100;
     
+    if(const ==0)
+        
+        
+        %find out where the colors loop back to being stable and stop them
+        %there, this will allow a stable or unstable line to be drawn
+        %startAt = 4700; % should be 1, changed for specific figures
+        startAt = 1;
+        endEarly = 1;
+        
+        if(ourColor == 2 || ourColor == 3 || ourColor == 5)
+            endEarly = (size(data,2)/1) - 8469 + 1;
+            startAt = 4760;
+        end
+        
+        if(ourColor == 4 || ourColor == 6 || ourColor == 7)
+            endEarly = (size(data,2)/1) - 6891 + 1;
+        end
+            
+    else
+        
+        startAt = 1;
+        endEarly = 1;
+        
+        
+        if(ourColor == 1)
+            endEarly = (size(data,2)/1) - 8322 + 1;
+        end
+        
+        
+        if(ourColor == 2 || ourColor == 3 || ourColor == 5)
+            endEarly = (size(data,2)/1) - 4886 + 1;
+        end
+        
+        if(ourColor == 4 || ourColor == 6 || ourColor == 7)
+            startAt = 3026;
+            endEarly = (size(data,2)/1) - 4749 + 1;
+        end
+        
+        if(ourColor == 8)
+            startAt = 3028;
+            %endEarly = (size(data,2)/1) - 4749 + 1;
+        end
+    end
+    
+elseif(networkNumber==84)
+    startAt = 1;
+    endEarly = 1200;
+    
+    if(ourColor == 1)
+        startAt = 1970;
+        endEarly = 1000;
+        
+        
+    elseif(ourColor == 2 || ourColor == 3 || ourColor == 5)
+        %endEarly = (size(data,2)/1) - 4886 + 1;
+        
+        
+        % --+ links back to ++-, so any of the 2-on's have already been drawn
+    elseif(ourColor == 4 || ourColor == 6 || ourColor == 7)
+        return;
+        %startAt = 3026;
+        %endEarly = (size(data,2)/1) - 4749 + 1;
+        
+    elseif(ourColor == 8)
+        return;
+        %startAt = 3028;
+        %endEarly = (size(data,2)/1) - 4749 + 1;
+    end
 end
 
 startInd = startAt;
 endInd = 1;
 
-for i = startAt:(size(data,2)/1)-endAt
+for i = startAt:((size(data,2)/1)-endEarly)
     
     if(networkNumber ==1)
         newColor = ourColor-1;
@@ -87,13 +127,11 @@ for i = startAt:(size(data,2)/1)-endAt
             || (ourColor-1) ~= newColor)
         col = clr(ourColor,:);
         if(ourColor-1 ~= newColor)
-            endInd = (i); 
+            endInd = (i);
         end
-     %   endInd = (i);
-     
-     if(data(parameter,(i)) > maxAlpha && data(parameter,(i)) < maxAlpha+.1 && isAttractor(data(1:3,i),data(4,i),networkNumber))
-        fprintf('parameter leaving alpha range for initial color %d, a:%f, x:%f, y:%f, z:%f\n',initialColor,data(4,(i)),data(1,(i)),data(2,(i)),data(3,(i)));
-     end
+        %   endInd = (i);
+        
+        
         if( initStability || showUnstable)
             %this is a nasty hack around the fact that our colors are bound
             %as binary opposites around 4 then the sum mod 8 = the lower
@@ -102,15 +140,17 @@ for i = startAt:(size(data,2)/1)-endAt
                 ourColor  = initialColor;
             end
             if(~initStability)
-               ourColor = initialColor; 
+    %            ourColor = initialColor;
             end
-            if(endInd - startInd >2)
+            %if(endInd - startInd >1)
+            if(startInd >1)
                 fprintf('parameter leaving alpha range for color %d, start %d, end %d\n',ourColor,startInd,endInd);
                 col = clr(ourColor,:);
                 drawPoints(data,axes,startInd,endInd,col,initStability);
+                %drawPoints(data,axes,startInd,endInd+1,col,initStability);
             end
         end
-        startInd=(i);    
+        startInd=(i);
         initStability = isAttractor(data(1:3,startInd),data(4,startInd),networkNumber);
         %        newColor = getColor(data(:,startInd),axes);
         %        color = newColor;
@@ -140,14 +180,15 @@ for i = startAt:(size(data,2)/1)-endAt
                 ourColor  = initialColor;
             end
             if(~initStability)
-               ourColor = initialColor; 
+   %             ourColor = initialColor;
             end
             fprintf('parameter changing stability for color %d, start %d, end %d\n',ourColor,startInd,endInd);
             
             col = clr(ourColor,:);
             drawPoints(data,axes,startInd,endInd,col,initStability);
+            %drawPoints(data,axes,startInd,endInd+1,col,initStability);
             if(~initStability)
-               ourColor = newColor+1; 
+                ourColor = newColor+1;
             end
         end
         startInd=(i);
@@ -168,7 +209,8 @@ function drawPoints(data,axes,startInd,endInd,clr,stable)
 %is alpha one of the axes we are using?
 alphaPresent = max(axes ==4);
 
-if(endInd - startInd < 2)
+if(endInd - startInd < 1)
+    fprintf('returning from drawPoints without printing, not enough pts\n');
     return;
 end
 
@@ -176,21 +218,32 @@ handle = -1;
 
 if(length(axes) ==3)
     if(startInd < endInd)
-        x_coordinates = data(axes(1),startInd:endInd);
-        y_coordinates = data(axes(2),startInd:endInd);
-        z_coordinates = data(axes(3),startInd:endInd);
+%         
+%         x_coordinates = data(axes(1),startInd:endInd);
+%         y_coordinates = data(axes(2),startInd:endInd);
+%         z_coordinates = data(axes(3),startInd:endInd);
+        x_coordinates = log(data(axes(1),startInd:endInd));
+        y_coordinates = log(data(axes(2),startInd:endInd));
+        z_coordinates = log(data(axes(3),startInd:endInd));
+        
         if(stable)
             if(alphaPresent)
-                handle = line(z_coordinates, x_coordinates, y_coordinates,'color',clr,'linewidth',1.5);
+                %handle = line(z_coordinates, x_coordinates, y_coordinates,'color',clr,'linewidth',4);
+                handle = patchline(z_coordinates, x_coordinates, y_coordinates,'color',clr,'linewidth',4);
             else
-                handle = line(x_coordinates, y_coordinates, z_coordinates,'color',clr,'linewidth',1.5);
+                %handle = line(x_coordinates, y_coordinates, z_coordinates,'color',clr,'linewidth',4);
+                handle = patchline(x_coordinates, y_coordinates, z_coordinates,'color',clr,'linewidth',4);
             end
         else
             %we only care able stable steady states
             if(alphaPresent)
-                handle = line(z_coordinates, x_coordinates, y_coordinates,'color',clr,'linewidth',.2);
+                %handle = line(z_coordinates, x_coordinates, y_coordinates,'color',clr,'linewidth',.1);
+                %handle = line(z_coordinates, x_coordinates, y_coordinates,'color',[0.5 0.5 0.5],'linewidth',.5);
+                handle = patchline(z_coordinates, x_coordinates, y_coordinates,'color',[0.5 0.5 0.5],'linewidth',.5);
             else
-                handle = line(x_coordinates, y_coordinates, z_coordinates,'color',clr,'linewidth',.2);
+                %handle = line(x_coordinates, y_coordinates, z_coordinates,'color',clr,'linewidth',.1);
+                %handle = line(x_coordinates, y_coordinates, z_coordinates,'color',[0.5 0.5 0.5],'linewidth',.5);
+                handle = patchline(x_coordinates, y_coordinates, z_coordinates,'color',[0.5 0.5 0.5],'linewidth',.5);
             end
         end
         updateAxes(axes,alphaPresent);
@@ -201,16 +254,20 @@ elseif(length(axes) ==2)
         y_coordinates = data(axes(2),startInd:endInd);
         if(stable)
             if(alphaPresent)
-                handle = line(x_coordinates, y_coordinates,'color',clr,'linewidth',1.5);
+                %handle = line(x_coordinates, y_coordinates,'color',clr,'linewidth',1.5);
+                handle = patchline(x_coordinates, y_coordinates,'color',clr,'linewidth',1.5);
             else
-                handle = line(x_coordinates, y_coordinates,'color',clr,'linewidth',1.5);
+                %handle = line(x_coordinates, y_coordinates,'color',clr,'linewidth',1.5);
+                handle = patchline(x_coordinates, y_coordinates,'color',clr,'linewidth',1.5);
             end
         else
-            %we only care able stable steady states
+            %we only care about stable steady states
             if(alphaPresent)
-                handle = line(y_coordinates, x_coordinates,'color',clr,'linewidth',.2);
+                %handle = line(y_coordinates, x_coordinates,'color',clr,'linewidth',.2);
+                handle = patchline(y_coordinates, x_coordinates,'color',clr,'linewidth',.2);
             else
-                handle = line(x_coordinates, y_coordinates, 'color',clr,'linewidth',.2);
+                %handle = line(x_coordinates, y_coordinates, 'color',clr,'linewidth',.2);
+                handle = patchline(x_coordinates, y_coordinates, 'color',clr,'linewidth',.2);
             end
         end
         updateAxes(axes,alphaPresent);
@@ -229,58 +286,110 @@ function updateAxes(axes,alphaPresent)
 global offset;
 global alphaOffset;
 global networkNumber;
+global constant;
+
+fontSize = 28;
 
 names = ['X','Y','Z','A'];
 set(gca,'XGrid','on','YGrid','on','ZGrid','on','XMinorGrid','off','YMinorGrid','off','ZMinorGrid','off')
-set(gca,'fontsize',18)
+set(gca,'fontsize',fontSize, 'FontWeight' , 'bold')
+
+%patches are not transparent when using log scale, hack around it
+%set(gca,'Xscale','log','Yscale','log','Zscale','log')
+%axisValues = [.5 20 .01 20 .01 20];
+%tickPositions = [.1 1 10];
+%set(gca,'XTick',tickPositions)
+%set(gca,'YTick',tickPositions)
+%set(gca,'ZTick',tickPositions)
+
+axisValues = log([.5 20 .01 20 .01 20]);
+tickPositions = [.01 .1 1 5 20];
+
+labels=num2cell(tickPositions);
+
+axis(axisValues)
+set(gca,'XTick',log(tickPositions))
+%set(gca,'XTickLabel',labels)
+set(gca,'YTick',log(tickPositions))
+%set(gca,'YTickLabel',labels)
+set(gca,'ZTick',log(tickPositions))
+%set(gca,'ZTickLabel',labels)
+set(gca,'GridLineStyle','--')
+
 
 
 %net 1
 if(networkNumber ==1)
-    set(gca,'Xscale','log','Yscale','log','Zscale','log')
-    axis([(alphaOffset*.9+offset*.9)+.1 100 offset*.9+.1 100 offset*.9+.1 100])
-
-%    axis([0 5 0 5 0 5]);
+    
+%     if(constant ==0)
+%         axis([(alphaOffset*.9+offset*.9)+.1 10 offset*.9+.01 10 offset*.9+.01 10])
+%     else
+%         axis([(alphaOffset*.9+offset*.9)+.1 10 offset*.9+.08 10 offset*.9+.08 10])
+%     end
+        
+    
+    %    axis([0 5 0 5 0 5]);
     
     %for const .09
     %axis([(alphaOffset*.9+offset*.9) 10 offset*.9 10 offset*.9 10])
 else
-    %net 84 A vs X possibility 1
-    set(gca,'Xscale','log','Yscale','log','Zscale','log')
-    axis([.6 20 .001 20 .001 20])
+%     %net 84 A vs X possibility 1
+%     set(gca,'Xscale','log','Yscale','log','Zscale','log')
+%     %axis([.6 20 .001 20 .001 20])
+%     axis([.6 20 .0005 20 .0005 20])
     
     %net 84 A vs X possibility 2, looks awkward
     %axis([-.1 2 -.1 2 -.1 2])
     %set(gca,'Xscale','log','Yscale','log','Zscale','log')
 end
 
+
+
 if(alphaPresent == 0)
-    xlabel(names(axes(1)),'fontsize',18)
-    ylabel(names(axes(2)),'fontsize',18)
+    xlabel(names(axes(1)),'fontsize',fontSize)
+    ylabel(names(axes(2)),'fontsize',fontSize)
     if(length(axes)==3)
-        zlabel(names(axes(3)),'fontsize',18)
+        zlabel(names(axes(3)),'fontsize',fontSize)
     end
 else
     if(length(axes)==3)
-        xlabel(names(axes(3)),'fontsize',18)
-        ylabel(names(axes(1)),'fontsize',18)
-        zlabel(names(axes(2)),'fontsize',18)
+        %if we have an alpha then the first dimension will always be alpha
+        xlabel('\alpha','fontsize',fontSize+4)
+        %xlabel(names(axes(3)),'fontsize',18)
+        ylabel(names(axes(1)),'fontsize',fontSize)
+        zlabel(names(axes(2)),'fontsize',fontSize)
     else
-        xlabel(names(axes(2)),'fontsize',18)
-        ylabel(names(axes(1)),'fontsize',18)
+        xlabel(names(axes(2)),'fontsize',fontSize+4)
+        ylabel(names(axes(1)),'fontsize',fontSize)
     end
     
 end
 
+view(-95,16)
+
+%nolabels mode
+% xlabel([]);
+% ylabel([]);
+% zlabel([]);
+% 
+% set(gca,'XTickLabel',[])
+% set(gca,'YTickLabel',[])
+% set(gca,'ZTickLabel',[])
 end
 
 %this works only if we are bifurcating on alpha (auto-activation) and it will
 %return whether a point is an attractor for the provided alpha
+%we don't care about the constant because a jacobian is a derivative
 function [isStable] = isAttractor(xIn,alpha,network)
 global networkNumber;
 global offset;
 global alphaOffset;
 
+
+if(alpha <0)
+    isStable=0;
+    return
+end
 
 alpha = alpha-alphaOffset;
 
@@ -319,7 +428,7 @@ global offset;
 global alphaOffset;
 
 if(networkNumber == 1)
-%    row = dataRow;
+    %    row = dataRow;
     row = row-offset;
     row(4,:) = row(4,:)-alphaOffset;
 else
@@ -332,9 +441,9 @@ possibilities = [row(1:3) ; .0001];
 color = round(round(row(1:3))/max(possibilities));
 
 for i=1:3
-   if(color(i) > 1)
-       color(i) = 1;
-   end
+    if(color(i) > 1)
+        color(i) = 1;
+    end
 end
 
 %dataRow
